@@ -1,9 +1,0 @@
-{
-  "query": "DELETE FROM requests; DELETE FROM creditTransactions;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4EzxWKisxm7nRfB.aab2f755a1b8 --database 42VKYWdatm2pmzWizVjsPB --execute DELETE FROM requests; DELETE FROM creditTransactions;",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 533
-}
