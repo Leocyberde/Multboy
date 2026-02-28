@@ -1,0 +1,2 @@
+ALTER TABLE `requests` MODIFY COLUMN `status` enum('aguardando_resposta','cotado','aceito','concluido','cancelado') NOT NULL DEFAULT 'aguardando_resposta';--> statement-breakpoint
+ALTER TABLE `requests` ADD `clientAccepted` enum('pending','accepted','rejected') DEFAULT 'pending';
