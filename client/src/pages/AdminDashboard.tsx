@@ -140,12 +140,18 @@ export default function AdminDashboard() {
           <TabsContent value="pending">
             <div className="space-y-4">
               <div className="flex justify-start">
-                <TabsTrigger value="pending" asChild>
-                  <Button variant="ghost" className="text-white hover:text-blue-400 p-0 h-auto flex items-center gap-2 mb-6">
-                    <Home className="h-4 w-4" />
-                    Voltar para o Início
-                  </Button>
-                </TabsTrigger>
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:text-blue-400 p-0 h-auto flex items-center gap-2 mb-6"
+                  onClick={() => {
+                    const tabsList = document.querySelector('[role="tablist"]');
+                    const firstTab = tabsList?.querySelector('[role="tab"]') as HTMLElement;
+                    firstTab?.click();
+                  }}
+                >
+                  <Home className="h-4 w-4" />
+                  Voltar para o Início
+                </Button>
               </div>
               <div className="grid gap-4">
                 {!pendingData || pendingData.length === 0 ? (
@@ -220,12 +226,18 @@ export default function AdminDashboard() {
           <TabsContent value="accepted">
             <div className="space-y-4">
               <div className="flex justify-start">
-                <TabsTrigger value="pending" asChild>
-                  <Button variant="ghost" className="text-white hover:text-blue-400 p-0 h-auto flex items-center gap-2 mb-6">
-                    <Home className="h-4 w-4" />
-                    Voltar para o Início
-                  </Button>
-                </TabsTrigger>
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:text-blue-400 p-0 h-auto flex items-center gap-2 mb-6"
+                  onClick={() => {
+                    const tabsList = document.querySelector('[role="tablist"]');
+                    const firstTab = tabsList?.querySelector('[role="tab"]') as HTMLElement;
+                    firstTab?.click();
+                  }}
+                >
+                  <Home className="h-4 w-4" />
+                  Voltar para o Início
+                </Button>
               </div>
               <div className="grid gap-4">
                 {!acceptedData || acceptedData.length === 0 ? (

@@ -480,12 +480,18 @@ export default function ClientDashboard() {
           <TabsContent value="requests">
             <div className="space-y-4">
               <div className="flex justify-start">
-                <TabsTrigger value="new-request" asChild>
-                  <Button variant="ghost" className="text-white hover:text-blue-400 p-0 h-auto flex items-center gap-2 mb-2">
-                    <Home className="h-4 w-4" />
-                    Voltar para o Início
-                  </Button>
-                </TabsTrigger>
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:text-blue-400 p-0 h-auto flex items-center gap-2 mb-2"
+                  onClick={() => {
+                    const tabsList = document.querySelector('[role="tablist"]');
+                    const firstTab = tabsList?.querySelector('[role="tab"]') as HTMLElement;
+                    firstTab?.click();
+                  }}
+                >
+                  <Home className="h-4 w-4" />
+                  Voltar para o Início
+                </Button>
               </div>
               {requests.length === 0 ? (
                 <Card className="bg-white/95 backdrop-blur">
@@ -619,12 +625,18 @@ export default function ClientDashboard() {
           <TabsContent value="history">
             <div className="space-y-4">
               <div className="flex justify-start">
-                <TabsTrigger value="new-request" asChild>
-                  <Button variant="ghost" className="text-white hover:text-blue-400 p-0 h-auto flex items-center gap-2 mb-2">
-                    <Home className="h-4 w-4" />
-                    Voltar para o Início
-                  </Button>
-                </TabsTrigger>
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:text-blue-400 p-0 h-auto flex items-center gap-2 mb-2"
+                  onClick={() => {
+                    const tabsList = document.querySelector('[role="tablist"]');
+                    const firstTab = tabsList?.querySelector('[role="tab"]') as HTMLElement;
+                    firstTab?.click();
+                  }}
+                >
+                  <Home className="h-4 w-4" />
+                  Voltar para o Início
+                </Button>
               </div>
               <Card className="bg-white/95 backdrop-blur">
                 <CardHeader>
