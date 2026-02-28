@@ -1,26 +1,26 @@
-import { decimal, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { decimal, integer, pgEnum, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+
+export const roleEnum = pgEnum("role", ["user", "admin"]);
+export const requestTypeEnum = pgEnum("request_type", ["delivery", "frete"]);
+export const requestStatusEnum = pgEnum("request_status", ["aguardando_resposta", "cotado", "aceito", "concluido", "cancelado"]);
+export const clientAcceptedEnum = pgEnum("client_accepted", ["pending", "accepted", "rejected"]);
+export const creditTransactionTypeEnum = pgEnum("credit_transaction_type", ["purchase", "debit"]);
 
 /**
  * Core user table backing auth flow.
  * Extend this file with additional tables as your product grows.
  * Columns use camelCase to match both database fields and generated types.
  */
-export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
-  id: int("id").autoincrement().primaryKey(),
-  /** Username for simple auth */
+export const users = pgTable("users", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   username: varchar("username", { length: 255 }).notNull().unique(),
-  /** Hashed password */
   passwordHash: text("passwordHash").notNull(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: roleEnum("role").default("user").notNull(),
   creditBalance: decimal("creditBalance", { precision: 10, scale: 2 }).default("0.00").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
@@ -30,23 +30,23 @@ export type InsertUser = typeof users.$inferInsert;
 /**
  * Solicitações de delivery e frete
  */
-export const requests = mysqlTable("requests", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
-  type: mysqlEnum("type", ["delivery", "frete"]).notNull(),
+export const requests = pgTable("requests", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer("userId").notNull(),
+  type: requestTypeEnum("type").notNull(),
   pickupLocation: text("pickupLocation").notNull(),
   deliveryLocation: text("deliveryLocation").notNull(),
-  pickupCoordinates: text("pickupCoordinates"), // JSON: {lat, lng}
-  deliveryCoordinates: text("deliveryCoordinates"), // JSON: {lat, lng}
+  pickupCoordinates: text("pickupCoordinates"),
+  deliveryCoordinates: text("deliveryCoordinates"),
   description: text("description"),
-  status: mysqlEnum("status", ["aguardando_resposta", "cotado", "aceito", "concluido", "cancelado"]).default("aguardando_resposta").notNull(),
+  status: requestStatusEnum("status").default("aguardando_resposta").notNull(),
   quotedPrice: decimal("quotedPrice", { precision: 10, scale: 2 }),
-  estimatedDistance: decimal("estimatedDistance", { precision: 10, scale: 2 }), // em km
-  clientAccepted: mysqlEnum("clientAccepted", ["pending", "accepted", "rejected"]).default("pending"),
-  orderNumber: varchar("orderNumber", { length: 10 }), // 4 dígitos do número do pedido
-  pickupCode: varchar("pickupCode", { length: 10 }), // 4 dígitos do código de coleta
+  estimatedDistance: decimal("estimatedDistance", { precision: 10, scale: 2 }),
+  clientAccepted: clientAcceptedEnum("clientAccepted").default("pending"),
+  orderNumber: varchar("orderNumber", { length: 10 }),
+  pickupCode: varchar("pickupCode", { length: 10 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 export type Request = typeof requests.$inferSelect;
@@ -55,11 +55,11 @@ export type InsertRequest = typeof requests.$inferInsert;
 /**
  * Histórico de transações de créditos
  */
-export const creditTransactions = mysqlTable("creditTransactions", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
-  requestId: int("requestId"),
-  type: mysqlEnum("type", ["purchase", "debit"]).notNull(),
+export const creditTransactions = pgTable("creditTransactions", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer("userId").notNull(),
+  requestId: integer("requestId"),
+  type: creditTransactionTypeEnum("type").notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   description: text("description"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

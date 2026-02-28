@@ -1,14 +1,15 @@
-import { eq, and } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, requests, creditTransactions, Request, CreditTransaction } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import { InsertUser, users, requests, creditTransactions } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      const client = postgres(process.env.DATABASE_URL);
+      _db = drizzle(client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -17,7 +18,6 @@ export async function getDb() {
   return _db;
 }
 
-// User queries
 export async function getUserByUsername(username: string) {
   const db = await getDb();
   if (!db) return undefined;
@@ -35,7 +35,7 @@ export async function getUserById(id: number) {
 export async function createUser(user: InsertUser) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(users).values(user);
+  const result = await db.insert(users).values(user).returning();
   return result;
 }
 
@@ -45,11 +45,10 @@ export async function updateUserCreditBalance(userId: number, newBalance: string
   await db.update(users).set({ creditBalance: newBalance }).where(eq(users.id, userId));
 }
 
-// Request queries
 export async function createRequest(request: typeof requests.$inferInsert) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(requests).values(request);
+  const result = await db.insert(requests).values(request).returning();
   return result;
 }
 
@@ -81,11 +80,10 @@ export async function updateRequestStatus(id: number, status: string, quotedPric
   await db.update(requests).set(updates).where(eq(requests.id, id));
 }
 
-// Credit transaction queries
 export async function createCreditTransaction(transaction: typeof creditTransactions.$inferInsert) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return await db.insert(creditTransactions).values(transaction);
+  return await db.insert(creditTransactions).values(transaction).returning();
 }
 
 export async function getCreditTransactionsByUserId(userId: number) {
@@ -94,8 +92,6 @@ export async function getCreditTransactionsByUserId(userId: number) {
   return await db.select().from(creditTransactions).where(eq(creditTransactions.userId, userId));
 }
 
-
-// Gerar número aleatório de 4 dígitos
 function generateFourDigitNumber(): string {
   return String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 }
