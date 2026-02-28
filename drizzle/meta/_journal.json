@@ -8,6 +8,13 @@
       "when": 1772255505458,
       "tag": "0000_wide_shaman",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772256508425,
+      "tag": "0001_fixed_pride",
+      "breakpoints": true
     }
   ]
 }

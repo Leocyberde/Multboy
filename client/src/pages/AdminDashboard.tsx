@@ -249,7 +249,7 @@ export default function AdminDashboard() {
                         {req.customerWhatsapp && <div className="text-sm font-bold text-green-600">WhatsApp: {req.customerWhatsapp}</div>}
                         {req.observations && <div className="text-xs italic">Obs: {req.observations}</div>}
                       </div>
-                    </CardHeader>
+                    </CardContent>
                   </Card>
                 ))
               )}
