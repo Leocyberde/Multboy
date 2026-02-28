@@ -214,6 +214,7 @@ export default function AdminDashboard() {
                 ))
               )}
             </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="accepted">
@@ -271,6 +272,7 @@ export default function AdminDashboard() {
                   </Card>
                 ))
               )}
+            </div>
             </div>
           </TabsContent>
         </Tabs>
