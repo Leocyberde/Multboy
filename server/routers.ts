@@ -92,14 +92,6 @@ export const appRouter = router({
         return await db.getRequestsByUserId(ctx.user.id);
       }),
 
-    getPending: protectedProcedure
-      .query(async ({ ctx }) => {
-        if (!ctx.user?.role || ctx.user.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN" });
-        }
-        return await db.getPendingRequests();
-      }),
-
     getAccepted: protectedProcedure
       .query(async ({ ctx }) => {
         if (!ctx.user?.role || ctx.user.role !== "admin") {
@@ -107,17 +99,74 @@ export const appRouter = router({
         }
         const db_instance = await db.getDb();
         if (!db_instance) return [];
-        const { requests } = await import("../drizzle/schema");
+        const { requests, users } = await import("../drizzle/schema");
         const { eq, or, inArray } = await import("drizzle-orm");
+        
+        // Join with users to get store info (owner of the request)
+        const results = await db_instance
+          .select({
+            request: requests,
+            store: users,
+          })
+          .from(requests)
+          .innerJoin(users, eq(requests.userId, users.id))
+          .where(
+            inArray(requests.status, ["aceito", "preparo", "pronto"])
+          );
+          
+        return results.map(r => ({
+          ...r.request,
+          storeName: r.store.name,
+          storeWhatsapp: r.store.email, // Using email field for store contact if that's where it's stored, or let's assume store info is in user record
+        }));
+      }),
+
+    getPending: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user?.role || ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const db_instance = await db.getDb();
+        if (!db_instance) return [];
+        const { requests, users } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        
+        const results = await db_instance
+          .select({
+            request: requests,
+            store: users,
+          })
+          .from(requests)
+          .innerJoin(users, eq(requests.userId, users.id))
+          .where(
+            eq(requests.status, "aguardando_resposta")
+          );
+          
+        return results.map(r => ({
+          ...r.request,
+          storeName: r.store.name,
+          storeWhatsapp: r.store.username, // Using username as fallback or identifier
+        }));
+      }),
+
+    getInRoute: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user?.role || ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const db_instance = await db.getDb();
+        if (!db_instance) return [];
+        const { requests } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
         return await db_instance.select().from(requests).where(
-          inArray(requests.status, ["aceito", "preparo", "pronto"])
+          eq(requests.status, "em_rota")
         );
       }),
 
     updateRequestStatus: protectedProcedure
       .input(z.object({
         requestId: z.number(),
-        status: z.enum(["preparo", "pronto", "concluido", "cancelado"]),
+        status: z.enum(["preparo", "pronto", "em_rota", "concluido", "cancelado"]),
       }))
       .mutation(async ({ ctx, input }) => {
         if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });

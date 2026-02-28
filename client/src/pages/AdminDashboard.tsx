@@ -47,6 +47,11 @@ export default function AdminDashboard() {
     { enabled: !!user && user?.role === "admin" }
   );
 
+  const { data: inRouteData, refetch: refetchInRoute } = trpc.requests.getInRoute.useQuery(
+    undefined,
+    { enabled: !!user && user?.role === "admin" }
+  );
+
   useEffect(() => {
     if (user && user?.role !== "admin") {
       setLocation("/");
@@ -70,6 +75,7 @@ export default function AdminDashboard() {
     onSuccess: () => {
       toast.success("Status atualizado!");
       refetchAccepted();
+      refetchInRoute();
     },
     onError: () => {
       toast.error("Erro ao atualizar status");
@@ -102,7 +108,7 @@ export default function AdminDashboard() {
     setRespondingRequest(false);
   };
 
-  const handleUpdateStatus = (requestId: number, status: "concluido" | "cancelado") => {
+  const handleUpdateStatus = (requestId: number, status: "concluido" | "cancelado" | "em_rota") => {
     updateStatusMutation.mutate({ requestId, status });
   };
 
@@ -134,7 +140,8 @@ export default function AdminDashboard() {
         <Tabs defaultValue="pending" className="space-y-6">
           <TabsList className="bg-white/10 border border-white/20">
             <TabsTrigger value="pending" className="text-white">Aguardando Resposta</TabsTrigger>
-            <TabsTrigger value="accepted" className="text-white">Pedidos em Andamento</TabsTrigger>
+            <TabsTrigger value="accepted" className="text-white">Aguardando Boy</TabsTrigger>
+            <TabsTrigger value="in_route" className="text-white">Em Rota</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending">
@@ -150,7 +157,7 @@ export default function AdminDashboard() {
                   }}
                 >
                   <Home className="h-4 w-4" />
-                  Voltar para o Início
+                  Início
                 </Button>
               </div>
               <div className="grid gap-4">
@@ -198,18 +205,33 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <p className="text-xs font-bold text-gray-500">COLETA</p>
+                        <p className="text-xs font-bold text-gray-500 uppercase">Loja / Coleta</p>
                         <p className="text-sm">{req.pickupLocation}</p>
+                        {req.storeWhatsapp && (
+                          <a 
+                            href={`https://wa.me/${req.storeWhatsapp.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-green-600 font-bold hover:underline flex items-center gap-1"
+                          >
+                            WhatsApp Loja: {req.storeWhatsapp}
+                          </a>
+                        )}
                       </div>
                       <div className="space-y-1">
-                        <p className="text-xs font-bold text-gray-500">ENTREGA</p>
+                        <p className="text-xs font-bold text-gray-500 uppercase">Cliente / Entrega</p>
                         <p className="text-sm">{req.deliveryLocation}</p>
+                        {req.customerWhatsapp && (
+                          <a 
+                            href={`https://wa.me/${req.customerWhatsapp.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-green-600 font-bold hover:underline flex items-center gap-1"
+                          >
+                            WhatsApp Cliente: {req.customerWhatsapp}
+                          </a>
+                        )}
                       </div>
-                      {req.customerWhatsapp && (
-                        <div className="col-span-2 flex items-center gap-2 text-sm text-green-600 font-bold">
-                          WhatsApp: {req.customerWhatsapp}
-                        </div>
-                      )}
                       {req.observations && (
                         <div className="col-span-2 p-2 bg-gray-100 rounded text-sm italic">
                           Obs: {req.observations}
@@ -236,23 +258,23 @@ export default function AdminDashboard() {
                   }}
                 >
                   <Home className="h-4 w-4" />
-                  Voltar para o Início
+                  Início
                 </Button>
               </div>
               <div className="grid gap-4">
                 {!acceptedData || acceptedData.length === 0 ? (
-                  <Card className="bg-white/95"><CardContent className="py-10 text-center text-gray-500">Nenhum pedido em andamento</CardContent></Card>
+                  <Card className="bg-white/95"><CardContent className="py-10 text-center text-gray-500">Nenhum pedido aguardando boy</CardContent></Card>
                 ) : (
-                  acceptedData.map((req: any) => (
-                    <Card key={req.id} className="bg-white/95 border-l-4 border-green-500">
+                  acceptedData.filter((r: any) => r.status === "aceito" || r.status === "preparo" || r.status === "pronto").map((req: any) => (
+                    <Card key={req.id} className="bg-white/95 border-l-4 border-yellow-500">
                     <CardHeader className="flex flex-row items-center justify-between">
                       <div>
                         <CardTitle className="text-lg">
                           #{req.orderNumber} - {req.customerName || "Cliente"}
                         </CardTitle>
                         <CardDescription>
-                          Status: <span className="font-bold text-blue-600 uppercase">
-                            {req.status === "aceito" && "Aguardando Preparo"}
+                          Status: <span className="font-bold text-orange-600 uppercase">
+                            {req.status === "aceito" && "Aguardando Boy"}
                             {req.status === "preparo" && "Em Preparo"}
                             {req.status === "pronto" && "Pronto para Coleta"}
                           </span>
@@ -260,7 +282,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex gap-2">
                         <Button size="sm" variant="outline" className="text-red-600 border-red-200" onClick={() => handleUpdateStatus(req.id, "cancelado")}>Cancelar</Button>
-                        <Button size="sm" className="bg-green-600" onClick={() => handleUpdateStatus(req.id, "concluido")}>Concluir</Button>
+                        <Button size="sm" className="bg-blue-600" onClick={() => updateStatusMutation.mutate({ requestId: req.id, status: "em_rota" })}>Chamar Boy</Button>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -270,15 +292,96 @@ export default function AdminDashboard() {
                           <p className="text-xl font-mono">{req.pickupCode}</p>
                         </div>
                         <div>
-                          <p className="font-bold text-gray-500">VALOR PAGO</p>
+                          <p className="font-bold text-gray-500">VALOR</p>
                           <p className="text-xl font-bold text-blue-600">R$ {parseFloat(req.quotedPrice).toFixed(2)}</p>
                         </div>
                       </div>
                       <div className="p-3 bg-gray-50 rounded space-y-2">
-                        <div className="flex gap-2 text-sm"><MapPin className="h-4 w-4 text-green-600"/> <b>De:</b> {req.pickupLocation}</div>
-                        <div className="flex gap-2 text-sm"><MapPin className="h-4 w-4 text-red-600"/> <b>Para:</b> {req.deliveryLocation}</div>
-                        {req.customerWhatsapp && <div className="text-sm font-bold text-green-600">WhatsApp: {req.customerWhatsapp}</div>}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex gap-2 text-sm"><MapPin className="h-4 w-4 text-green-600"/> <b>De:</b> {req.pickupLocation}</div>
+                          {req.storeWhatsapp && (
+                            <a 
+                              href={`https://wa.me/${req.storeWhatsapp.replace(/\D/g, "")}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ml-6 text-xs text-green-600 font-bold hover:underline"
+                            >
+                              WhatsApp Loja: {req.storeWhatsapp}
+                            </a>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex gap-2 text-sm"><MapPin className="h-4 w-4 text-red-600"/> <b>Para:</b> {req.deliveryLocation}</div>
+                          {req.customerWhatsapp && (
+                            <a 
+                              href={`https://wa.me/${req.customerWhatsapp.replace(/\D/g, "")}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ml-6 text-xs text-green-600 font-bold hover:underline"
+                            >
+                              WhatsApp Cliente: {req.customerWhatsapp}
+                            </a>
+                          )}
+                        </div>
                         {req.observations && <div className="text-xs italic">Obs: {req.observations}</div>}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="in_route">
+            <div className="space-y-4">
+              <div className="flex justify-start">
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:text-blue-400 p-0 h-auto flex items-center gap-2 mb-6"
+                  onClick={() => {
+                    const tabsList = document.querySelector('[role="tablist"]');
+                    const firstTab = tabsList?.querySelector('[role="tab"]') as HTMLElement;
+                    firstTab?.click();
+                  }}
+                >
+                  <Home className="h-4 w-4" />
+                  Início
+                </Button>
+              </div>
+              <div className="grid gap-4">
+                {!inRouteData || inRouteData.length === 0 ? (
+                  <Card className="bg-white/95"><CardContent className="py-10 text-center text-gray-500">Nenhum pedido em rota</CardContent></Card>
+                ) : (
+                  inRouteData.map((req: any) => (
+                    <Card key={req.id} className="bg-white/95 border-l-4 border-blue-500">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg">
+                          #{req.orderNumber} - {req.customerName || "Cliente"}
+                        </CardTitle>
+                        <CardDescription>
+                          Status: <span className="font-bold text-blue-600 uppercase">EM ROTA</span>
+                        </CardDescription>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" className="bg-green-600" onClick={() => handleUpdateStatus(req.id, "concluido")}>Concluir Entrega</Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="p-3 bg-gray-50 rounded space-y-2">
+                        <div className="flex gap-2 text-sm"><MapPin className="h-4 w-4 text-green-600"/> <b>Coleta:</b> {req.pickupLocation}</div>
+                        <div className="flex gap-2 text-sm"><MapPin className="h-4 w-4 text-red-600"/> <b>Entrega:</b> {req.deliveryLocation}</div>
+                        {req.customerWhatsapp && (
+                          <a 
+                            href={`https://wa.me/${req.customerWhatsapp.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-bold text-green-600 hover:underline block"
+                          >
+                            WhatsApp Cliente: {req.customerWhatsapp}
+                          </a>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -289,6 +392,7 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </main>
+
     </div>
   );
 }

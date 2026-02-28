@@ -2,7 +2,7 @@ import { decimal, integer, pgEnum, pgTable, text, timestamp, varchar } from "dri
 
 export const roleEnum = pgEnum("role", ["user", "admin"]);
 export const requestTypeEnum = pgEnum("request_type", ["delivery", "frete"]);
-export const requestStatusEnum = pgEnum("request_status", ["aguardando_resposta", "cotado", "aceito", "concluido", "cancelado", "preparo", "pronto"]);
+export const requestStatusEnum = pgEnum("request_status", ["aguardando_resposta", "cotado", "aceito", "concluido", "cancelado", "preparo", "pronto", "em_rota"]);
 export const clientAcceptedEnum = pgEnum("client_accepted", ["pending", "accepted", "rejected"]);
 export const creditTransactionTypeEnum = pgEnum("credit_transaction_type", ["purchase", "debit"]);
 
