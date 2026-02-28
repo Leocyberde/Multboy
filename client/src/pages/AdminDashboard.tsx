@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { LogOut, MapPin, DollarSign, Loader2, Map, CheckCircle, Clock, Package, User } from "lucide-react";
+import { LogOut, MapPin, DollarSign, Loader2, Map, CheckCircle, Clock, Package, User, Home } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import MapWithDistance from "@/components/MapWithDistance";
@@ -138,8 +138,17 @@ export default function AdminDashboard() {
           </TabsList>
 
           <TabsContent value="pending">
-            <div className="grid gap-4">
-              {!pendingData || pendingData.length === 0 ? (
+            <div className="space-y-4">
+              <div className="flex justify-start">
+                <TabsTrigger value="pending" asChild>
+                  <Button variant="ghost" className="text-white hover:text-blue-400 p-0 h-auto flex items-center gap-2 mb-6">
+                    <Home className="h-4 w-4" />
+                    Voltar para o Início
+                  </Button>
+                </TabsTrigger>
+              </div>
+              <div className="grid gap-4">
+                {!pendingData || pendingData.length === 0 ? (
                 <Card className="bg-white/95"><CardContent className="py-10 text-center text-gray-500">Nenhuma solicitação pendente</CardContent></Card>
               ) : (
                 pendingData.map((req: any) => (
@@ -208,12 +217,21 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="accepted">
-            <div className="grid gap-4">
-              {!acceptedData || acceptedData.length === 0 ? (
-                <Card className="bg-white/95"><CardContent className="py-10 text-center text-gray-500">Nenhum pedido em andamento</CardContent></Card>
-              ) : (
-                acceptedData.map((req: any) => (
-                  <Card key={req.id} className="bg-white/95 border-l-4 border-green-500">
+            <div className="space-y-4">
+              <div className="flex justify-start">
+                <TabsTrigger value="pending" asChild>
+                  <Button variant="ghost" className="text-white hover:text-blue-400 p-0 h-auto flex items-center gap-2 mb-6">
+                    <Home className="h-4 w-4" />
+                    Voltar para o Início
+                  </Button>
+                </TabsTrigger>
+              </div>
+              <div className="grid gap-4">
+                {!acceptedData || acceptedData.length === 0 ? (
+                  <Card className="bg-white/95"><CardContent className="py-10 text-center text-gray-500">Nenhum pedido em andamento</CardContent></Card>
+                ) : (
+                  acceptedData.map((req: any) => (
+                    <Card key={req.id} className="bg-white/95 border-l-4 border-green-500">
                     <CardHeader className="flex flex-row items-center justify-between">
                       <div>
                         <CardTitle className="text-lg">

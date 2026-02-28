@@ -304,11 +304,13 @@ export default function ClientDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="new-request" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 bg-white/10 border border-white/20">
-            <TabsTrigger value="new-request" className="text-white data-[state=active]:bg-blue-600">Nova Solicitação</TabsTrigger>
-            <TabsTrigger value="requests" className="text-white data-[state=active]:bg-blue-600">Minhas Solicitações</TabsTrigger>
-            <TabsTrigger value="history" className="text-white data-[state=active]:bg-blue-600">Histórico</TabsTrigger>
-          </TabsList>
+          <div className="flex justify-between items-center mb-4">
+            <TabsList className="grid w-full grid-cols-3 bg-white/10 border border-white/20">
+              <TabsTrigger value="new-request" className="text-white data-[state=active]:bg-blue-600">Nova Solicitação</TabsTrigger>
+              <TabsTrigger value="requests" className="text-white data-[state=active]:bg-blue-600">Minhas Solicitações</TabsTrigger>
+              <TabsTrigger value="history" className="text-white data-[state=active]:bg-blue-600">Histórico</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* New Request Tab */}
           <TabsContent value="new-request" className="space-y-4">
@@ -477,6 +479,14 @@ export default function ClientDashboard() {
           {/* Requests Tab */}
           <TabsContent value="requests">
             <div className="space-y-4">
+              <div className="flex justify-start">
+                <TabsTrigger value="new-request" asChild>
+                  <Button variant="ghost" className="text-white hover:text-blue-400 p-0 h-auto flex items-center gap-2 mb-2">
+                    <Home className="h-4 w-4" />
+                    Voltar para o Início
+                  </Button>
+                </TabsTrigger>
+              </div>
               {requests.length === 0 ? (
                 <Card className="bg-white/95 backdrop-blur">
                   <CardContent className="pt-6 text-center text-gray-500">
@@ -607,17 +617,27 @@ export default function ClientDashboard() {
 
           {/* History Tab */}
           <TabsContent value="history">
-            <Card className="bg-white/95 backdrop-blur">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <History className="mr-2 h-5 w-5" />
-                  Histórico de Transações
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Histórico de transações de créditos</p>
-              </CardContent>
-            </Card>
+            <div className="space-y-4">
+              <div className="flex justify-start">
+                <TabsTrigger value="new-request" asChild>
+                  <Button variant="ghost" className="text-white hover:text-blue-400 p-0 h-auto flex items-center gap-2 mb-2">
+                    <Home className="h-4 w-4" />
+                    Voltar para o Início
+                  </Button>
+                </TabsTrigger>
+              </div>
+              <Card className="bg-white/95 backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <History className="mr-2 h-5 w-5" />
+                    Histórico de Transações
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">Histórico de transações de créditos</p>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </main>
