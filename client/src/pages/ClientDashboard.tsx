@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { LogOut, Package, Truck, CreditCard, History, Loader2, Home } from "lucide-react";
+import { LogOut, Package, Truck, CreditCard, History, Loader2, Home, CheckCircle2, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
@@ -15,6 +16,9 @@ interface Request {
   pickupLocation: string;
   deliveryLocation: string;
   description?: string | null;
+  customerName?: string | null;
+  customerWhatsapp?: string | null;
+  observations?: string | null;
   status: string;
   quotedPrice?: string | null;
   orderNumber?: string | null;
@@ -27,6 +31,9 @@ export default function ClientDashboard() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [pickupLocation, setPickupLocation] = useState("");
   const [deliveryLocation, setDeliveryLocation] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerWhatsapp, setCustomerWhatsapp] = useState("");
+  const [observations, setObservations] = useState("");
   const [freteDescription, setFreteDescription] = useState("");
   const [creditAmount, setCreditAmount] = useState("");
   const [creatingDelivery, setCreatingDelivery] = useState(false);
@@ -48,8 +55,7 @@ export default function ClientDashboard() {
   const createDeliveryMutation = trpc.requests.createDelivery.useMutation({
     onSuccess: () => {
       toast.success("Solicitação de delivery criada com sucesso!");
-      setPickupLocation("");
-      setDeliveryLocation("");
+      resetForm();
       refetchRequests();
     },
     onError: (error) => {
@@ -61,9 +67,7 @@ export default function ClientDashboard() {
   const createFreteMutation = trpc.requests.createFrete.useMutation({
     onSuccess: () => {
       toast.success("Solicitação de frete criada com sucesso!");
-      setPickupLocation("");
-      setDeliveryLocation("");
-      setFreteDescription("");
+      resetForm();
       refetchRequests();
     },
     onError: (error) => {
@@ -71,6 +75,15 @@ export default function ClientDashboard() {
       console.error(error);
     },
   });
+
+  const resetForm = () => {
+    setPickupLocation("");
+    setDeliveryLocation("");
+    setCustomerName("");
+    setCustomerWhatsapp("");
+    setObservations("");
+    setFreteDescription("");
+  };
 
   const addCreditsMutation = trpc.credits.addCredits.useMutation({
     onSuccess: () => {
@@ -105,6 +118,16 @@ export default function ClientDashboard() {
     },
   });
 
+  const updateStatusMutation = trpc.requests.updateRequestStatus.useMutation({
+    onSuccess: () => {
+      toast.success("Status atualizado!");
+      refetchRequests();
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar status");
+    },
+  });
+
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
       setLocation("/");
@@ -114,7 +137,7 @@ export default function ClientDashboard() {
 
   useEffect(() => {
     if (requestsData) {
-      setRequests(requestsData);
+      setRequests(requestsData as Request[]);
     }
   }, [requestsData]);
 
@@ -123,8 +146,8 @@ export default function ClientDashboard() {
   };
 
   const handleCreateDelivery = async () => {
-    if (!pickupLocation || !deliveryLocation) {
-      toast.error("Preencha todos os campos");
+    if (!pickupLocation || !deliveryLocation || !customerName) {
+      toast.error("Preencha os campos obrigatórios");
       return;
     }
 
@@ -132,13 +155,16 @@ export default function ClientDashboard() {
     await createDeliveryMutation.mutateAsync({
       pickupLocation,
       deliveryLocation,
+      customerName,
+      customerWhatsapp,
+      observations,
     });
     setCreatingDelivery(false);
   };
 
   const handleCreateFrete = async () => {
-    if (!pickupLocation || !deliveryLocation || !freteDescription) {
-      toast.error("Preencha todos os campos");
+    if (!pickupLocation || !deliveryLocation || !freteDescription || !customerName) {
+      toast.error("Preencha os campos obrigatórios");
       return;
     }
 
@@ -147,6 +173,9 @@ export default function ClientDashboard() {
       pickupLocation,
       deliveryLocation,
       description: freteDescription,
+      customerName,
+      customerWhatsapp,
+      observations,
     });
     setCreatingFrete(false);
   };
@@ -170,6 +199,10 @@ export default function ClientDashboard() {
 
   const handleRejectRequest = (requestId: number) => {
     rejectRequestMutation.mutate({ requestId });
+  };
+
+  const handleUpdateStatus = (requestId: number, status: "preparo" | "pronto") => {
+    updateStatusMutation.mutate({ requestId, status });
   };
 
   if (userLoading) {
@@ -294,11 +327,29 @@ export default function ClientDashboard() {
                       Solicitar Delivery
                     </CardTitle>
                     <CardDescription>
-                      Informe o local de coleta e entrega
+                      Informe os dados da entrega
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Nome Completo do Cliente</label>
+                        <Input
+                          placeholder="Nome do cliente"
+                          value={customerName}
+                          onChange={(e) => setCustomerName(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">WhatsApp do Cliente</label>
+                        <Input
+                          placeholder="(00) 00000-0000"
+                          value={customerWhatsapp}
+                          onChange={(e) => setCustomerWhatsapp(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
                       <label className="text-sm font-medium">Local de Coleta</label>
                       <Input
                         placeholder="Ex: Rua A, 123 - Centro"
@@ -306,12 +357,20 @@ export default function ClientDashboard() {
                         onChange={(e) => setPickupLocation(e.target.value)}
                       />
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <label className="text-sm font-medium">Local de Entrega</label>
                       <Input
                         placeholder="Ex: Rua B, 456 - Bairro"
                         value={deliveryLocation}
                         onChange={(e) => setDeliveryLocation(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Observações</label>
+                      <Textarea
+                        placeholder="Ex: Próximo ao mercado, campainha estragada, etc."
+                        value={observations}
+                        onChange={(e) => setObservations(e.target.value)}
                       />
                     </div>
                     <Button 
@@ -341,11 +400,29 @@ export default function ClientDashboard() {
                       Solicitar Frete
                     </CardTitle>
                     <CardDescription>
-                      Descreva o serviço que você precisa
+                      Descreva o serviço de frete
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Nome Completo do Cliente</label>
+                        <Input
+                          placeholder="Nome do cliente"
+                          value={customerName}
+                          onChange={(e) => setCustomerName(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">WhatsApp do Cliente</label>
+                        <Input
+                          placeholder="(00) 00000-0000"
+                          value={customerWhatsapp}
+                          onChange={(e) => setCustomerWhatsapp(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
                       <label className="text-sm font-medium">Local de Coleta</label>
                       <Input
                         placeholder="Ex: Rua A, 123 - Centro"
@@ -353,7 +430,7 @@ export default function ClientDashboard() {
                         onChange={(e) => setPickupLocation(e.target.value)}
                       />
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <label className="text-sm font-medium">Local de Entrega</label>
                       <Input
                         placeholder="Ex: Rua B, 456 - Bairro"
@@ -361,12 +438,20 @@ export default function ClientDashboard() {
                         onChange={(e) => setDeliveryLocation(e.target.value)}
                       />
                     </div>
-                    <div>
-                      <label className="text-sm font-medium">Descrição do Serviço</label>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Descrição da Carga</label>
                       <Input
-                        placeholder="Descreva o serviço que precisa"
+                        placeholder="O que será transportado?"
                         value={freteDescription}
                         onChange={(e) => setFreteDescription(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Observações</label>
+                      <Textarea
+                        placeholder="Detalhes adicionais..."
+                        value={observations}
+                        onChange={(e) => setObservations(e.target.value)}
                       />
                     </div>
                     <Button 
@@ -395,7 +480,7 @@ export default function ClientDashboard() {
               {requests.length === 0 ? (
                 <Card className="bg-white/95 backdrop-blur">
                   <CardContent className="pt-6 text-center text-gray-500">
-                    Você não tem solicitações pendentes
+                    Você não tem solicitações
                   </CardContent>
                 </Card>
               ) : (
@@ -406,12 +491,15 @@ export default function ClientDashboard() {
                         <div>
                           <CardTitle className="text-lg">
                             {request.type === "delivery" ? "📦 Delivery" : "🚚 Frete"}
+                            {request.customerName && <span className="ml-2 text-sm text-gray-500">- {request.customerName}</span>}
                           </CardTitle>
                           <CardDescription>
                             Status: <span className="font-semibold text-gray-900">
                               {request.status === "aguardando_resposta" && "Aguardando Resposta"}
                               {request.status === "cotado" && "Cotado"}
                               {request.status === "aceito" && "Aceito"}
+                              {request.status === "preparo" && "Em Preparo"}
+                              {request.status === "pronto" && "Pronto para Coleta"}
                               {request.status === "concluido" && "Concluído"}
                               {request.status === "cancelado" && "Cancelado"}
                             </span>
@@ -427,6 +515,20 @@ export default function ClientDashboard() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                      {request.orderNumber && (
+                        <div className="flex gap-4">
+                          <div>
+                            <p className="text-xs text-gray-500">Pedido</p>
+                            <p className="font-bold">#{request.orderNumber}</p>
+                          </div>
+                          {request.pickupCode && (
+                            <div>
+                              <p className="text-xs text-gray-500">Coleta</p>
+                              <p className="font-bold">{request.pickupCode}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       <div>
                         <p className="text-sm text-gray-600">De:</p>
                         <p className="font-medium">{request.pickupLocation}</p>
@@ -435,29 +537,15 @@ export default function ClientDashboard() {
                         <p className="text-sm text-gray-600">Para:</p>
                         <p className="font-medium">{request.deliveryLocation}</p>
                       </div>
-                      {request.description && (
+                      {request.observations && (
                         <div>
-                          <p className="text-sm text-gray-600">Descrição:</p>
-                          <p className="font-medium">{request.description}</p>
+                          <p className="text-sm text-gray-600">Obs:</p>
+                          <p className="text-sm italic">{request.observations}</p>
                         </div>
                       )}
-                      {request.status === "aceito" && request.orderNumber && request.pickupCode && (
-                        <div className="p-4 bg-green-50 rounded-lg border border-green-200 space-y-2">
-                          <p className="text-sm font-semibold text-green-900">Pedido Aceito!</p>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-xs text-green-700">Número do Pedido</p>
-                              <p className="text-2xl font-bold text-green-600">{request.orderNumber}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-green-700">Código de Coleta</p>
-                              <p className="text-2xl font-bold text-green-600">{request.pickupCode}</p>
-                            </div>
-                          </div>
-                          <p className="text-xs text-green-700 mt-2">Aguardando motoboy...</p>
-                        </div>
-                      )}
-                      {request.status === "cotado" && request.quotedPrice && (
+                      
+                      {/* Actions for Cotado Status */}
+                      {request.status === "cotado" && (
                         <div className="flex gap-2 pt-4 border-t">
                           <Button 
                             className="flex-1 bg-green-600 hover:bg-green-700 text-white" 
@@ -466,13 +554,8 @@ export default function ClientDashboard() {
                             disabled={acceptRequestMutation.isPending}
                           >
                             {acceptRequestMutation.isPending ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Processando...
-                              </>
-                            ) : (
-                              "u2713 Aceitar"
-                            )}
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : "Aceitar"}
                           </Button>
                           <Button 
                             className="flex-1 bg-red-600 hover:bg-red-700 text-white" 
@@ -481,14 +564,38 @@ export default function ClientDashboard() {
                             disabled={rejectRequestMutation.isPending}
                           >
                             {rejectRequestMutation.isPending ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Processando...
-                              </>
-                            ) : (
-                              "u2715 Recusar"
-                            )}
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : "Recusar"}
                           </Button>
+                        </div>
+                      )}
+
+                      {/* Actions for Accepted Status */}
+                      {(request.status === "aceito" || request.status === "preparo" || request.status === "pronto") && (
+                        <div className="space-y-2 pt-4 border-t">
+                          <p className="text-sm font-semibold">Atualizar Status:</p>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant={request.status === "preparo" ? "default" : "outline"}
+                              className="flex-1"
+                              size="sm"
+                              onClick={() => handleUpdateStatus(request.id, "preparo")}
+                              disabled={updateStatusMutation.isPending || request.status === "preparo"}
+                            >
+                              {request.status === "preparo" ? <CheckCircle2 className="h-4 w-4 mr-1" /> : <Clock className="h-4 w-4 mr-1" />}
+                              Em Preparo
+                            </Button>
+                            <Button 
+                              variant={request.status === "pronto" ? "default" : "outline"}
+                              className="flex-1"
+                              size="sm"
+                              onClick={() => handleUpdateStatus(request.id, "pronto")}
+                              disabled={updateStatusMutation.isPending || request.status === "pronto"}
+                            >
+                              {request.status === "pronto" ? <CheckCircle2 className="h-4 w-4 mr-1" /> : <Package className="h-4 w-4 mr-1" />}
+                              Pronto
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </CardContent>

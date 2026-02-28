@@ -2,7 +2,7 @@ import { decimal, integer, pgEnum, pgTable, text, timestamp, varchar } from "dri
 
 export const roleEnum = pgEnum("role", ["user", "admin"]);
 export const requestTypeEnum = pgEnum("request_type", ["delivery", "frete"]);
-export const requestStatusEnum = pgEnum("request_status", ["aguardando_resposta", "cotado", "aceito", "concluido", "cancelado"]);
+export const requestStatusEnum = pgEnum("request_status", ["aguardando_resposta", "cotado", "aceito", "concluido", "cancelado", "preparo", "pronto"]);
 export const clientAcceptedEnum = pgEnum("client_accepted", ["pending", "accepted", "rejected"]);
 export const creditTransactionTypeEnum = pgEnum("credit_transaction_type", ["purchase", "debit"]);
 
@@ -39,6 +39,9 @@ export const requests = pgTable("requests", {
   pickupCoordinates: text("pickupCoordinates"),
   deliveryCoordinates: text("deliveryCoordinates"),
   description: text("description"),
+  customerName: text("customerName"),
+  customerWhatsapp: varchar("customerWhatsapp", { length: 20 }),
+  observations: text("observations"),
   status: requestStatusEnum("status").default("aguardando_resposta").notNull(),
   quotedPrice: decimal("quotedPrice", { precision: 10, scale: 2 }),
   estimatedDistance: decimal("estimatedDistance", { precision: 10, scale: 2 }),

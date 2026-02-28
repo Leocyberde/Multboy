@@ -28,6 +28,9 @@ export const appRouter = router({
         deliveryLocation: z.string(),
         pickupCoordinates: z.string().optional(),
         deliveryCoordinates: z.string().optional(),
+        customerName: z.string().optional(),
+        customerWhatsapp: z.string().optional(),
+        observations: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -39,6 +42,9 @@ export const appRouter = router({
           deliveryLocation: input.deliveryLocation,
           pickupCoordinates: input.pickupCoordinates,
           deliveryCoordinates: input.deliveryCoordinates,
+          customerName: input.customerName,
+          customerWhatsapp: input.customerWhatsapp,
+          observations: input.observations,
           status: "aguardando_resposta",
         });
         
@@ -54,6 +60,9 @@ export const appRouter = router({
         description: z.string(),
         pickupCoordinates: z.string().optional(),
         deliveryCoordinates: z.string().optional(),
+        customerName: z.string().optional(),
+        customerWhatsapp: z.string().optional(),
+        observations: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -66,6 +75,9 @@ export const appRouter = router({
           description: input.description,
           pickupCoordinates: input.pickupCoordinates,
           deliveryCoordinates: input.deliveryCoordinates,
+          customerName: input.customerName,
+          customerWhatsapp: input.customerWhatsapp,
+          observations: input.observations,
           status: "aguardando_resposta",
         });
         
@@ -96,8 +108,31 @@ export const appRouter = router({
         const db_instance = await db.getDb();
         if (!db_instance) return [];
         const { requests } = await import("../drizzle/schema");
-        const { eq } = await import("drizzle-orm");
-        return await db_instance.select().from(requests).where(eq(requests.status, "aceito"));
+        const { eq, or, inArray } = await import("drizzle-orm");
+        return await db_instance.select().from(requests).where(
+          inArray(requests.status, ["aceito", "preparo", "pronto"])
+        );
+      }),
+
+    updateRequestStatus: protectedProcedure
+      .input(z.object({
+        requestId: z.number(),
+        status: z.enum(["preparo", "pronto", "concluido", "cancelado"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        
+        const request = await db.getRequestById(input.requestId);
+        if (!request) throw new TRPCError({ code: "NOT_FOUND" });
+        
+        // Se não for admin, só pode atualizar se for o dono do pedido
+        if (ctx.user.role !== "admin" && request.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        
+        await db.updateRequestStatus(input.requestId, input.status);
+        
+        return { success: true };
       }),
 
     respondToRequest: protectedProcedure
